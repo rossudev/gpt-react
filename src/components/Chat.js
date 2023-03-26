@@ -5,11 +5,13 @@ import TextareaAutosize from 'react-textarea-autosize';
 import XClose from "./XClose";
 import { dataContext } from "../App";
 import { debounce } from 'lodash';
+import copy from "copy-to-clipboard";
+import Hyphenated from 'react-hyphen';
 
 const Chat = ({numba, onClose, systemMessage, responseType, model, samplingType, temperature, topp, userID, adv}) => {
     const {token, passphrase} = useContext(dataContext);
 
-    const [chatInput, setChatInput] = useState("Hello ChatGPT.");
+    const [chatInput, setChatInput] = useState("");
     const [isClicked, setIsClicked] = useState(false);
     const [sentOne, setSentOne] = useState(false);
 
@@ -84,8 +86,6 @@ const Chat = ({numba, onClose, systemMessage, responseType, model, samplingType,
         };
     };
 
-
-
     const handleChat = debounce(async () => {
         if ( chatInput ) {
             setIsClicked(true);
@@ -115,9 +115,22 @@ const Chat = ({numba, onClose, systemMessage, responseType, model, samplingType,
         setChatInput(value);
     };
 
+    const handleCopy = (e) => {
+        e.preventDefault();
+        const selectedText = document.getSelection().toString();
+        const textContent = selectedText.replace(/\u00AD/g, '');
+        navigator.clipboard.writeText(textContent);
+    };
+
+    const copyClick = (value) => {
+        if (typeof value === 'string') {
+          copy(value);
+        };
+    };
+
     return (
-        <div className="self-start mt-1 mb-1 inline p-6 bg-nosferatu-200 rounded-3xl bg-gradient-to-tl from-nosferatu-500 shadow-2xl min-w-[97%]">
-            <table className="min-w-full">
+        <div className="min-w-full self-start mt-1 mb-1 inline p-6 bg-nosferatu-200 rounded-3xl bg-gradient-to-tl from-nosferatu-500 shadow-2xl">
+            <table className="border-separate border-spacing-y-4">
                 <tbody>
                     <tr>
                         <td colSpan="2" className="pb-4 tracking-wide text-4xl text-center font-bold text-nosferatu-900">
@@ -137,16 +150,27 @@ const Chat = ({numba, onClose, systemMessage, responseType, model, samplingType,
                     }
                     {chatMessages.map((obj, index) => (
                         <tr key={index}>
-                            <td colSpan="3"><pre className={obj.role === "user" || obj.role === "system" ? "mt-3 p-3 bg-lincoln-300 font-sans rounded-xl text-black-800 text-sm ring-1 whitespace-pre-wrap" : "whitespace-pre-wrap mt-3 p-3 bg-nosferatu-800 font-mono rounded-xl text-vanHelsing-200 text-sm ring-1"}>{obj.content}</pre></td>
+                            <td onCopy={handleCopy} colSpan="3" className={obj.role === "user" || obj.role === "system" ? 
+                                  "py-3 p-3 bg-lincoln-300 font-sans rounded-xl text-black-800 text-sm ring-1 whitespace-pre-wrap" : 
+                                  "py-3 whitespace-pre-wrap p-3 bg-nosferatu-800 font-mono rounded-xl text-vanHelsing-200 text-sm ring-1"}>
+                                <div className="items-end justify-end text-right mb-3">
+                                    <i onClick={() => copyClick(obj.content)} className="m-2 fa-solid fa-copy fa-2x cursor-pointer shadow-xl hover:shadow-dracula-900"></i>
+                                </div>
+                                <div>
+                                    <Hyphenated>
+                                        {obj.content}
+                                    </Hyphenated>
+                                </div>
+                            </td>
                         </tr>
                     ))}
                     { ( !sentOne || (responseType === "Chat completion") ) && 
                      <tr>
                         <td colSpan="2">
-                            <TextareaAutosize onKeyDown={handleEnterKey} maxRows="15" className="mt-4 hover:bg-nosferatu-400 p-4 min-w-full bg-nosferatu-100 text-sm font-mono text-black ring-1 hover:ring-2 ring-vonCount-900 rounded-xl" placeholder="Chat" onChange={chatHandler()} value={chatInput} />
+                            <TextareaAutosize autoFocus onKeyDown={handleEnterKey} minRows="3" maxRows="15" className="placeholder:text-6xl placeholder:italic mt-3 hover:bg-nosferatu-400 p-4 min-w-full bg-nosferatu-100 text-sm font-mono text-black ring-1 hover:ring-2 ring-vonCount-900 rounded-xl" placeholder="Chat" onChange={chatHandler()} value={chatInput} />
                         </td>
-                        <td>
-                            <i onClick={ !isClicked ? () => handleChat() : null } className={ isClicked ? "text-dracula-800 mt-4 m-2 fa-solid fa-hat-wizard fa-2x cursor-pointer hover:text-dracula-900" : "text-blade-300 mt-4 m-2 fa-solid fa-message fa-2x cursor-pointer hover:text-blade-600" }></i>
+                        <td className="items-baseline justify-evenly text-center align-middle text-4xl">
+                            <i onClick={ !isClicked ? () => handleChat() : null } className={ isClicked ? "text-dracula-500 mt-4 m-2 fa-solid fa-hat-wizard fa-2x cursor-pointer hover:text-dracula-900" : "text-blade-300 mt-4 m-2 fa-solid fa-message fa-2x cursor-pointer hover:text-blade-800" }></i>
                         </td>
                     </tr>
                     }
